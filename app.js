@@ -142,7 +142,7 @@ function showCurrentWeather(data, placeName) {
   document.getElementById("resolvedAddress").textContent = placeName;
   document.getElementById("conditionText").textContent = weatherName;
   document.getElementById("summaryText").textContent = "Current weather and hourly forecast";
-  document.getElementById("temperature").textContent = roundValue(current.temperature_2m) + " C";
+  document.getElementById("temperature").textContent = formatTemp(current.temperature_2m);
   document.getElementById("windSpeed").textContent = roundValue(current.wind_speed_10m) + " km/h";
   document.getElementById("rainChance").textContent = roundValue(nearestHour.precipitation) + "%";
   document.getElementById("updatedAt").textContent = new Date().toLocaleTimeString([], {
@@ -200,28 +200,59 @@ function showHours(hours) {
     return;
   }
 
+  let lastDay = "";
+  let dayRow = null;
+  let dayHours = null;
+
   for (let i = 0; i < hours.length; i++) {
     const hour = hours[i];
+    const dayKey = getDateKey(hour.fullDate);
+
+    if (dayKey !== lastDay) {
+      dayRow = document.createElement("div");
+      dayRow.className = "day-row";
+
+      const dayTitle = document.createElement("h3");
+      dayTitle.textContent = getDayTitle(hour.fullDate);
+
+      dayHours = document.createElement("div");
+      dayHours.className = "day-hours";
+
+      dayRow.appendChild(dayTitle);
+      dayRow.appendChild(dayHours);
+      hourGrid.appendChild(dayRow);
+
+      lastDay = dayKey;
+    }
+
     const card = document.createElement("div");
     card.className = "hour-card";
 
     card.innerHTML =
+      "<div class='hour-card-top'>" +
       "<p class='hour-time'>" +
-      hour.fullDate.toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" }) +
+      getTimeText(hour.fullDate) +
       "</p>" +
+      "<span class='small-icon " +
+      getIconClass(hour.weather) +
+      "'></span>" +
+      "</div>" +
       "<p class='hour-temp'>" +
-      roundValue(hour.temp) +
-      " C</p>" +
-      "<p>" +
+      formatTemp(hour.temp) +
+      "</p>" +
+      "<p class='hour-weather'>" +
       hour.weather +
       "</p>" +
-      "<p class='hour-meta'>Wind: " +
-      roundValue(hour.windspeed) +
-      " km/h<br>Rain: " +
+      "<div class='hour-stats'>" +
+      "<span>" +
       roundValue(hour.precipitation) +
-      "%</p>";
+      "% rain</span>" +
+      "<span>" +
+      roundValue(hour.windspeed) +
+      " km/h</span>" +
+      "</div>";
 
-    hourGrid.appendChild(card);
+    dayHours.appendChild(card);
   }
 }
 
@@ -294,6 +325,47 @@ function getWeatherName(code) {
   return "Weather";
 }
 
+function getIconClass(weather) {
+  const text = weather.toLowerCase();
+
+  if (text.indexOf("rain") !== -1) {
+    return "rain-icon";
+  }
+
+  if (text.indexOf("snow") !== -1) {
+    return "snow-icon";
+  }
+
+  if (text.indexOf("cloud") !== -1 || text.indexOf("fog") !== -1) {
+    return "cloud-icon";
+  }
+
+  if (text.indexOf("storm") !== -1) {
+    return "storm-icon";
+  }
+
+  return "sun-icon";
+}
+
+function getTimeText(date) {
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getDateKey(date) {
+  return date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate();
+}
+
+function getDayTitle(date) {
+  return date.toLocaleDateString([], {
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+  });
+}
+
 function isCoords(text) {
   const parts = text.split(",");
 
@@ -320,6 +392,10 @@ function roundValue(value) {
   }
 
   return Math.round(value);
+}
+
+function formatTemp(value) {
+  return roundValue(value) + "°C";
 }
 
 showMessage("Search for a city or use your current location.");
