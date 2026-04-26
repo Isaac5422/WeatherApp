@@ -1,4 +1,3 @@
-const apiInput = document.getElementById("apiKeyInput");
 const locationInput = document.getElementById("locationInput");
 const weatherForm = document.getElementById("weatherForm");
 const refreshButton = document.getElementById("refreshButton");
@@ -12,11 +11,6 @@ let lastLocation = "";
 let pastHours = [];
 let futureHours = [];
 let currentTab = "past";
-
-const savedApiKey = localStorage.getItem("weatherApiKey");
-if (savedApiKey) {
-  apiInput.value = savedApiKey;
-}
 
 weatherForm.addEventListener("submit", function (event) {
   event.preventDefault();
@@ -62,7 +56,7 @@ function getUserLocation() {
       const location = lat + "," + lon;
 
       locationInput.value = location;
-      getWeather(location);
+      getWeatherByCoords(lat, lon, "Your location");
     },
     function () {
       showMessage("Could not get your location.", true);
@@ -71,7 +65,6 @@ function getUserLocation() {
 }
 
 function getWeather(location) {
-  const apiKey = apiInput.value.trim();
   location = location.trim();
 
   if (location === "") {
@@ -79,37 +72,59 @@ function getWeather(location) {
     return;
   }
 
-  if (apiKey === "") {
-    showMessage("Please enter your Visual Crossing API key.", true);
-    return;
-  }
-
-  localStorage.setItem("weatherApiKey", apiKey);
   lastLocation = location;
   showMessage("Loading weather...");
 
-  const today = new Date();
-  const startDate = getDateString(addDays(today, -2));
-  const endDate = getDateString(addDays(today, 2));
+  if (isCoords(location)) {
+    const parts = location.split(",");
+    getWeatherByCoords(parts[0].trim(), parts[1].trim(), location);
+    return;
+  }
+
+  const geoUrl = "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(location) + "&count=1&language=en&format=json";
+
+  fetch(geoUrl)
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error("Could not find this location.");
+      }
+      return response.json();
+    })
+    .then(function (geoData) {
+      if (!geoData.results || geoData.results.length === 0) {
+        throw new Error("City was not found.");
+      }
+
+      const place = geoData.results[0];
+      const name = place.name + ", " + place.country;
+      getWeatherByCoords(place.latitude, place.longitude, name);
+    })
+    .catch(function (error) {
+      showMessage(error.message, true);
+    });
+}
+
+function getWeatherByCoords(lat, lon, placeName) {
+  lastLocation = placeName;
+
   const url =
-    "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/" +
-    encodeURIComponent(location) +
-    "/" +
-    startDate +
-    "/" +
-    endDate +
-    "?unitGroup=metric&include=current,hours,days&contentType=json&key=" +
-    encodeURIComponent(apiKey);
+    "https://api.open-meteo.com/v1/forecast?latitude=" +
+    encodeURIComponent(lat) +
+    "&longitude=" +
+    encodeURIComponent(lon) +
+    "&current=temperature_2m,wind_speed_10m,weather_code" +
+    "&hourly=temperature_2m,wind_speed_10m,precipitation_probability,weather_code" +
+    "&timezone=auto&past_days=1&forecast_days=2";
 
   fetch(url)
     .then(function (response) {
       if (!response.ok) {
-        throw new Error("Something went wrong. Check the location or API key.");
+        throw new Error("Could not load weather.");
       }
       return response.json();
     })
     .then(function (data) {
-      showCurrentWeather(data);
+      showCurrentWeather(data, placeName);
       showMessage("Weather loaded.");
     })
     .catch(function (error) {
@@ -117,26 +132,25 @@ function getWeather(location) {
     });
 }
 
-function showCurrentWeather(data) {
-  let current = data.currentConditions;
+function showCurrentWeather(data, placeName) {
+  const current = data.current;
+  splitHours(data.hourly, current.time);
 
-  if (!current) {
-    current = {};
-  }
+  const nearestHour = findNearestHour();
+  const weatherName = getWeatherName(current.weather_code);
 
-  document.getElementById("resolvedAddress").textContent = data.resolvedAddress || data.address || lastLocation;
-  document.getElementById("conditionText").textContent = current.conditions || "Weather";
-  document.getElementById("summaryText").textContent = data.description || "Current weather details";
-  document.getElementById("temperature").textContent = roundValue(current.temp) + " C";
-  document.getElementById("windSpeed").textContent = roundValue(current.windspeed) + " km/h";
-  document.getElementById("rainChance").textContent = roundValue(current.precipprob) + "%";
+  document.getElementById("resolvedAddress").textContent = placeName;
+  document.getElementById("conditionText").textContent = weatherName;
+  document.getElementById("summaryText").textContent = "Current weather and hourly forecast";
+  document.getElementById("temperature").textContent = roundValue(current.temperature_2m) + " C";
+  document.getElementById("windSpeed").textContent = roundValue(current.wind_speed_10m) + " km/h";
+  document.getElementById("rainChance").textContent = roundValue(nearestHour.precipitation) + "%";
   document.getElementById("updatedAt").textContent = new Date().toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
 
-  setWeatherClass(current.conditions || "");
-  splitHours(data.days);
+  setWeatherClass(weatherName);
 
   currentWeather.hidden = false;
   hourlySection.hidden = false;
@@ -148,20 +162,22 @@ function showCurrentWeather(data) {
   }
 }
 
-function splitHours(days) {
-  const now = new Date();
+function splitHours(hourly, currentTime) {
+  const now = new Date(currentTime);
   const allHours = [];
   pastHours = [];
   futureHours = [];
 
-  for (let i = 0; i < days.length; i++) {
-    const day = days[i];
+  for (let i = 0; i < hourly.time.length; i++) {
+    const hour = {
+      fullDate: new Date(hourly.time[i]),
+      temp: hourly.temperature_2m[i],
+      windspeed: hourly.wind_speed_10m[i],
+      precipitation: hourly.precipitation_probability[i],
+      weather: getWeatherName(hourly.weather_code[i]),
+    };
 
-    for (let j = 0; j < day.hours.length; j++) {
-      const hour = day.hours[j];
-      hour.fullDate = new Date(hour.datetimeEpoch * 1000);
-      allHours.push(hour);
-    }
+    allHours.push(hour);
   }
 
   for (let k = 0; k < allHours.length; k++) {
@@ -197,12 +213,12 @@ function showHours(hours) {
       roundValue(hour.temp) +
       " C</p>" +
       "<p>" +
-      (hour.conditions || "Weather") +
+      hour.weather +
       "</p>" +
       "<p class='hour-meta'>Wind: " +
       roundValue(hour.windspeed) +
       " km/h<br>Rain: " +
-      roundValue(hour.precipprob) +
+      roundValue(hour.precipitation) +
       "%</p>";
 
     hourGrid.appendChild(card);
@@ -233,6 +249,61 @@ function setWeatherClass(conditions) {
   }
 }
 
+function findNearestHour() {
+  const allHours = pastHours.concat(futureHours);
+  let nearestHour = allHours[0] || {};
+  const now = new Date().getTime();
+
+  for (let i = 0; i < allHours.length; i++) {
+    const currentDiff = Math.abs(allHours[i].fullDate.getTime() - now);
+    const nearestDiff = Math.abs(nearestHour.fullDate.getTime() - now);
+
+    if (currentDiff < nearestDiff) {
+      nearestHour = allHours[i];
+    }
+  }
+
+  return nearestHour;
+}
+
+function getWeatherName(code) {
+  if (code === 0) {
+    return "Sunny";
+  }
+
+  if (code === 1 || code === 2 || code === 3) {
+    return "Cloudy";
+  }
+
+  if (code === 45 || code === 48) {
+    return "Foggy";
+  }
+
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+    return "Raining";
+  }
+
+  if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) {
+    return "Snowing";
+  }
+
+  if (code >= 95) {
+    return "Storm";
+  }
+
+  return "Weather";
+}
+
+function isCoords(text) {
+  const parts = text.split(",");
+
+  if (parts.length !== 2) {
+    return false;
+  }
+
+  return !isNaN(parts[0].trim()) && !isNaN(parts[1].trim());
+}
+
 function showMessage(message, isError) {
   statusText.textContent = message;
 
@@ -243,19 +314,6 @@ function showMessage(message, isError) {
   }
 }
 
-function addDays(date, days) {
-  const newDate = new Date(date);
-  newDate.setDate(newDate.getDate() + days);
-  return newDate;
-}
-
-function getDateString(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return year + "-" + month + "-" + day;
-}
-
 function roundValue(value) {
   if (value === undefined || value === null || isNaN(value)) {
     return "--";
@@ -264,8 +322,5 @@ function roundValue(value) {
   return Math.round(value);
 }
 
-if (savedApiKey) {
-  showMessage("You can search for a city or use your current location.");
-} else {
-  showMessage("Enter your API key and search for a city.");
-}
+showMessage("Search for a city or use your current location.");
+getUserLocation();
