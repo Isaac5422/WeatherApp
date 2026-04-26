@@ -1,19 +1,19 @@
-var apiInput = document.getElementById("apiKeyInput");
-var locationInput = document.getElementById("locationInput");
-var weatherForm = document.getElementById("weatherForm");
-var refreshButton = document.getElementById("refreshButton");
-var geoButton = document.getElementById("geoButton");
-var statusText = document.getElementById("status");
-var currentWeather = document.getElementById("currentWeather");
-var hourlySection = document.getElementById("hourlySection");
-var hourGrid = document.getElementById("hourGrid");
+const apiInput = document.getElementById("apiKeyInput");
+const locationInput = document.getElementById("locationInput");
+const weatherForm = document.getElementById("weatherForm");
+const refreshButton = document.getElementById("refreshButton");
+const geoButton = document.getElementById("geoButton");
+const statusText = document.getElementById("status");
+const currentWeather = document.getElementById("currentWeather");
+const hourlySection = document.getElementById("hourlySection");
+const hourGrid = document.getElementById("hourGrid");
 
-var lastLocation = "";
-var pastHours = [];
-var futureHours = [];
-var currentTab = "past";
+let lastLocation = "";
+let pastHours = [];
+let futureHours = [];
+let currentTab = "past";
 
-var savedApiKey = localStorage.getItem("weatherApiKey");
+const savedApiKey = localStorage.getItem("weatherApiKey");
 if (savedApiKey) {
   apiInput.value = savedApiKey;
 }
@@ -57,9 +57,9 @@ function getUserLocation() {
 
   navigator.geolocation.getCurrentPosition(
     function (position) {
-      var lat = position.coords.latitude.toFixed(4);
-      var lon = position.coords.longitude.toFixed(4);
-      var location = lat + "," + lon;
+      const lat = position.coords.latitude.toFixed(4);
+      const lon = position.coords.longitude.toFixed(4);
+      const location = lat + "," + lon;
 
       locationInput.value = location;
       getWeather(location);
@@ -71,7 +71,7 @@ function getUserLocation() {
 }
 
 function getWeather(location) {
-  var apiKey = apiInput.value.trim();
+  const apiKey = apiInput.value.trim();
   location = location.trim();
 
   if (location === "") {
@@ -88,10 +88,10 @@ function getWeather(location) {
   lastLocation = location;
   showMessage("Loading weather...");
 
-  var today = new Date();
-  var startDate = getDateString(addDays(today, -2));
-  var endDate = getDateString(addDays(today, 2));
-  var url =
+  const today = new Date();
+  const startDate = getDateString(addDays(today, -2));
+  const endDate = getDateString(addDays(today, 2));
+  const url =
     "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/" +
     encodeURIComponent(location) +
     "/" +
@@ -118,7 +118,7 @@ function getWeather(location) {
 }
 
 function showCurrentWeather(data) {
-  var current = data.currentConditions;
+  let current = data.currentConditions;
 
   if (!current) {
     current = {};
@@ -149,22 +149,22 @@ function showCurrentWeather(data) {
 }
 
 function splitHours(days) {
-  var now = new Date();
-  var allHours = [];
+  const now = new Date();
+  const allHours = [];
   pastHours = [];
   futureHours = [];
 
-  for (var i = 0; i < days.length; i++) {
-    var day = days[i];
+  for (let i = 0; i < days.length; i++) {
+    const day = days[i];
 
-    for (var j = 0; j < day.hours.length; j++) {
-      var hour = day.hours[j];
+    for (let j = 0; j < day.hours.length; j++) {
+      const hour = day.hours[j];
       hour.fullDate = new Date(hour.datetimeEpoch * 1000);
       allHours.push(hour);
     }
   }
 
-  for (var k = 0; k < allHours.length; k++) {
+  for (let k = 0; k < allHours.length; k++) {
     if (allHours[k].fullDate <= now) {
       pastHours.push(allHours[k]);
     } else {
@@ -184,9 +184,9 @@ function showHours(hours) {
     return;
   }
 
-  for (var i = 0; i < hours.length; i++) {
-    var hour = hours[i];
-    var card = document.createElement("div");
+  for (let i = 0; i < hours.length; i++) {
+    const hour = hours[i];
+    const card = document.createElement("div");
     card.className = "hour-card";
 
     card.innerHTML =
@@ -221,7 +221,7 @@ function changeTabs() {
 }
 
 function setWeatherClass(conditions) {
-  var text = conditions.toLowerCase();
+  const text = conditions.toLowerCase();
   currentWeather.className = "current-weather";
 
   if (text.indexOf("rain") !== -1 || text.indexOf("storm") !== -1) {
@@ -244,15 +244,15 @@ function showMessage(message, isError) {
 }
 
 function addDays(date, days) {
-  var newDate = new Date(date);
+  const newDate = new Date(date);
   newDate.setDate(newDate.getDate() + days);
   return newDate;
 }
 
 function getDateString(date) {
-  var year = date.getFullYear();
-  var month = String(date.getMonth() + 1).padStart(2, "0");
-  var day = String(date.getDate()).padStart(2, "0");
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return year + "-" + month + "-" + day;
 }
 
