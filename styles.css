@@ -197,11 +197,11 @@ button:hover {
   opacity: 0.5;
 }
 
-.hourly-section {
+.daily-section {
   margin-top: 30px;
 }
 
-.hourly-section h2 {
+.daily-section h2 {
   margin-bottom: 12px;
 }
 
@@ -224,16 +224,16 @@ button:hover {
   color: white;
 }
 
-.hour-grid {
+.day-grid {
   display: grid;
   gap: 18px;
 }
 
 .day-row {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
+  grid-template-columns: 170px minmax(0, 1fr);
   gap: 14px;
-  align-items: center;
+  align-items: stretch;
   padding: 14px;
   border-radius: 8px;
   background: #eef7fa;
@@ -250,16 +250,11 @@ button:hover {
   line-height: 1.3;
 }
 
-.day-hours {
+.day-card {
   display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 4px 2px 10px;
-}
-
-.hour-card {
-  flex: 0 0 145px;
-  min-height: 190px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
   padding: 14px;
   border: 1px solid #d6e4e8;
   border-radius: 8px;
@@ -267,46 +262,40 @@ button:hover {
   box-shadow: 0 8px 18px rgba(25, 124, 138, 0.1);
 }
 
-.hour-card p {
+.day-card p {
   margin: 0;
 }
 
-.hour-card-top {
+.day-card-main {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 14px;
+  min-width: 0;
 }
 
-.hour-time {
-  color: #555;
-  font-size: 16px;
+.day-weather {
+  color: #333;
+  font-size: 18px;
   font-weight: bold;
 }
 
-.hour-temp {
-  margin-top: 18px;
-  font-size: 30px;
+.day-temp {
+  margin-top: 5px;
+  font-size: 28px;
   font-weight: bold;
   letter-spacing: 0;
 }
 
-.hour-weather {
-  margin-top: 4px;
-  min-height: 22px;
-  color: #333;
-  font-size: 15px;
-}
-
-.hour-stats {
-  display: grid;
+.day-stats {
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  margin-top: 16px;
+  justify-content: flex-end;
   color: #4d6268;
   font-size: 13px;
 }
 
-.hour-stats span {
+.day-stats span {
   display: block;
   padding: 6px 8px;
   background: rgba(25, 124, 138, 0.08);
@@ -406,5 +395,14 @@ button:hover {
 
   .day-row h3 {
     padding: 10px 12px;
+  }
+
+  .day-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .day-stats {
+    justify-content: flex-start;
   }
 }
