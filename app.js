@@ -1,4 +1,5 @@
 const locationInput = document.getElementById("locationInput");
+const citySuggestions = document.getElementById("citySuggestions");
 const weatherForm = document.getElementById("weatherForm");
 const refreshButton = document.getElementById("refreshButton");
 const geoButton = document.getElementById("geoButton");
@@ -13,8 +14,44 @@ let futureDays = [];
 let allDays = [];
 let currentTab = "past";
 
+const popularCities = [
+  "New York",
+  "London",
+  "Tokyo",
+  "Paris",
+  "Berlin",
+  "Moscow",
+  "Istanbul",
+  "Almaty",
+  "Dubai",
+  "Madrid",
+  "Rome",
+  "Seoul",
+  "Toronto",
+  "Los Angeles",
+  "Amsterdam",
+  "Tashkent",
+  "Astana",
+  "Baku",
+];
+
+locationInput.addEventListener("focus", function () {
+  showCitySuggestions();
+});
+
+locationInput.addEventListener("input", function () {
+  showCitySuggestions();
+});
+
+document.addEventListener("click", function (event) {
+  if (!event.target.closest(".search-control")) {
+    hideCitySuggestions();
+  }
+});
+
 weatherForm.addEventListener("submit", function (event) {
   event.preventDefault();
+  hideCitySuggestions();
   getWeather(locationInput.value);
 });
 
@@ -114,6 +151,7 @@ function getWeatherByCoords(lat, lon, placeName) {
     encodeURIComponent(lon) +
     "&current=temperature_2m,wind_speed_10m,weather_code" +
     "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max" +
+    "&hourly=temperature_2m,wind_speed_10m,precipitation_probability,weather_code" +
     "&timezone=auto&past_days=7&forecast_days=8";
 
   fetch(url)
@@ -134,7 +172,7 @@ function getWeatherByCoords(lat, lon, placeName) {
 
 function showCurrentWeather(data, placeName) {
   const current = data.current;
-  splitDays(data.daily, current.time);
+  splitDays(data.daily, data.hourly, current.time);
 
   const todayWeather = findTodayWeather(current.time);
   const weatherName = getWeatherName(current.weather_code);
@@ -162,7 +200,7 @@ function showCurrentWeather(data, placeName) {
   }
 }
 
-function splitDays(daily, currentTime) {
+function splitDays(daily, hourly, currentTime) {
   const todayKey = getDateKey(new Date(currentTime));
   allDays = [];
   pastDays = [];
@@ -176,9 +214,27 @@ function splitDays(daily, currentTime) {
       windspeed: daily.wind_speed_10m_max[i],
       precipitation: daily.precipitation_probability_max[i],
       weather: getWeatherName(daily.weather_code[i]),
+      hours: [],
     };
 
     allDays.push(day);
+  }
+
+  for (let j = 0; j < hourly.time.length; j++) {
+    const hourDate = new Date(hourly.time[j]);
+    const hourDayKey = getDateKey(hourDate);
+
+    for (let d = 0; d < allDays.length; d++) {
+      if (getDateKey(allDays[d].fullDate) === hourDayKey) {
+        allDays[d].hours.push({
+          fullDate: hourDate,
+          temp: hourly.temperature_2m[j],
+          windspeed: hourly.wind_speed_10m[j],
+          precipitation: hourly.precipitation_probability[j],
+          weather: getWeatherName(hourly.weather_code[j]),
+        });
+      }
+    }
   }
 
   for (let k = 0; k < allDays.length; k++) {
@@ -209,11 +265,30 @@ function showDays(days) {
     const day = days[i];
     const row = document.createElement("div");
     const card = document.createElement("div");
-    const title = document.createElement("h3");
+    const title = document.createElement("button");
+    const hourlyBox = document.createElement("div");
 
     row.className = "day-row";
     card.className = "day-card";
+    title.className = "day-title";
+    title.type = "button";
     title.textContent = getDayTitle(day.fullDate);
+    hourlyBox.className = "day-hourly";
+    hourlyBox.hidden = true;
+    hourlyBox.innerHTML = getHourlyHtml(day);
+
+    function toggleHourly() {
+      const shouldOpen = hourlyBox.hidden;
+      closeAllHourlyRows();
+
+      if (shouldOpen) {
+        hourlyBox.hidden = false;
+        row.classList.add("is-open");
+      }
+    }
+
+    title.addEventListener("click", toggleHourly);
+    card.addEventListener("click", toggleHourly);
 
     card.innerHTML =
       "<div class='day-card-main'>" +
@@ -225,9 +300,13 @@ function showDays(days) {
       day.weather +
       "</p>" +
       "<p class='day-temp'>" +
-      formatTemp(day.maxTemp) +
-      " / " +
+      formatTemp(getAverageTemp(day)) +
+      " <span>avg</span>" +
+      "</p>" +
+      "<p class='day-minmax'>min " +
       formatTemp(day.minTemp) +
+      " / max " +
+      formatTemp(day.maxTemp) +
       "</p>" +
       "</div>" +
       "</div>" +
@@ -242,8 +321,100 @@ function showDays(days) {
 
     row.appendChild(title);
     row.appendChild(card);
+    row.appendChild(hourlyBox);
     dayGrid.appendChild(row);
   }
+}
+
+function showCitySuggestions() {
+  const text = locationInput.value.toLowerCase();
+  let matchedCities = [];
+
+  for (let i = 0; i < popularCities.length; i++) {
+    const city = popularCities[i];
+
+    if (city.toLowerCase().indexOf(text) !== -1) {
+      matchedCities.push(city);
+    }
+  }
+
+  citySuggestions.innerHTML = "";
+
+  if (matchedCities.length === 0) {
+    citySuggestions.hidden = true;
+    return;
+  }
+
+  for (let j = 0; j < matchedCities.length; j++) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = matchedCities[j];
+
+    button.addEventListener("click", function () {
+      locationInput.value = this.textContent;
+      hideCitySuggestions();
+      getWeather(this.textContent);
+    });
+
+    citySuggestions.appendChild(button);
+  }
+
+  citySuggestions.hidden = false;
+}
+
+function hideCitySuggestions() {
+  citySuggestions.hidden = true;
+}
+
+function closeAllHourlyRows() {
+  const rows = document.querySelectorAll(".day-row");
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const hourly = row.querySelector(".day-hourly");
+
+    if (hourly) {
+      hourly.hidden = true;
+      row.classList.remove("is-open");
+    }
+  }
+}
+
+function getHourlyHtml(day) {
+  let html = "";
+
+  if (day.hours.length === 0) {
+    return "<p>No hourly weather found for this day.</p>";
+  }
+
+  for (let i = 0; i < day.hours.length; i++) {
+    const hour = day.hours[i];
+
+    html +=
+      "<div class='hour-mini-card'>" +
+      "<div class='hour-mini-top'>" +
+      "<span>" +
+      getTimeText(hour.fullDate) +
+      "</span>" +
+      "<span class='small-icon " +
+      getIconClass(hour.weather) +
+      "'></span>" +
+      "</div>" +
+      "<strong>" +
+      formatTemp(hour.temp) +
+      "</strong>" +
+      "<p>" +
+      hour.weather +
+      "</p>" +
+      "<small>" +
+      roundValue(hour.precipitation) +
+      "% rain / " +
+      roundValue(hour.windspeed) +
+      " km/h</small>" +
+      "</div>";
+  }
+
+  return html;
 }
 
 function changeTabs() {
@@ -339,12 +510,23 @@ function getDateKey(date) {
   return year + "-" + month + "-" + day;
 }
 
+function getTimeText(date) {
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function getDayTitle(date) {
   return date.toLocaleDateString([], {
     weekday: "long",
     day: "numeric",
     month: "short",
   });
+}
+
+function getAverageTemp(day) {
+  return (Number(day.maxTemp) + Number(day.minTemp)) / 2;
 }
 
 function isCoords(text) {
