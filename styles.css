@@ -1,0 +1,268 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: #dfeef3;
+  color: #222;
+}
+
+.container {
+  width: 92%;
+  max-width: 1050px;
+  margin: 30px auto;
+  padding: 25px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+h1 {
+  margin: 0;
+  font-size: 42px;
+}
+
+.subtitle {
+  margin-top: 8px;
+  color: #555;
+}
+
+.search-box {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 25px;
+}
+
+input {
+  min-width: 220px;
+  flex: 1;
+  padding: 13px;
+  border: 1px solid #b7c7cc;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+button {
+  padding: 13px 18px;
+  border: none;
+  border-radius: 6px;
+  background: #197c8a;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background: #105c66;
+}
+
+.status {
+  min-height: 22px;
+  margin: 16px 0;
+  color: #555;
+}
+
+.status.error {
+  color: #b00020;
+}
+
+.current-weather {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  padding: 22px;
+  background: #197c8a;
+  color: white;
+  border-radius: 8px;
+}
+
+.weather-info {
+  flex: 1;
+}
+
+.weather-info h2 {
+  margin: 8px 0;
+  font-size: 38px;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.details div {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+}
+
+.details p {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.details strong {
+  font-size: 24px;
+}
+
+.weather-art {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  flex: 0 0 150px;
+}
+
+.sun {
+  position: absolute;
+  top: 18px;
+  left: 24px;
+  width: 70px;
+  height: 70px;
+  background: #ffc845;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.cloud {
+  position: absolute;
+  width: 100px;
+  height: 34px;
+  background: white;
+  border-radius: 20px;
+}
+
+.cloud::before,
+.cloud::after {
+  content: "";
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+}
+
+.cloud::before {
+  width: 45px;
+  height: 45px;
+  left: 18px;
+  top: -22px;
+}
+
+.cloud::after {
+  width: 38px;
+  height: 38px;
+  right: 15px;
+  top: -17px;
+}
+
+.cloud-one {
+  left: 35px;
+  top: 78px;
+}
+
+.cloud-two {
+  left: 5px;
+  top: 100px;
+  opacity: 0.75;
+}
+
+.rain {
+  display: none;
+  position: absolute;
+  left: 55px;
+  top: 112px;
+}
+
+.rain span {
+  display: inline-block;
+  width: 4px;
+  height: 24px;
+  margin-right: 8px;
+  background: #bfe9ff;
+  animation: rain 0.8s infinite;
+}
+
+.current-weather.rainy .rain {
+  display: block;
+}
+
+.current-weather.clear .cloud-two {
+  display: none;
+}
+
+.current-weather.cloudy .sun {
+  opacity: 0.5;
+}
+
+.hourly-section {
+  margin-top: 30px;
+}
+
+.tabs {
+  margin-bottom: 15px;
+}
+
+.tabs button {
+  background: #d6e8ed;
+  color: #222;
+}
+
+.tabs button.is-active {
+  background: #197c8a;
+  color: white;
+}
+
+.hour-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.hour-card {
+  padding: 14px;
+  border: 1px solid #cbd9dd;
+  border-radius: 6px;
+  background: #f5fbfd;
+}
+
+.hour-card p {
+  margin: 6px 0;
+}
+
+.hour-time,
+.hour-meta {
+  color: #555;
+  font-size: 14px;
+}
+
+.hour-temp {
+  font-size: 26px;
+  font-weight: bold;
+}
+
+@keyframes pulse {
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes rain {
+  50% {
+    transform: translateY(10px);
+  }
+}
+
+@media (max-width: 750px) {
+  .current-weather {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .details {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+}

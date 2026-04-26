@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather App</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Weather App</h1>
+      <p class="subtitle">Search a location and check the weather.</p>
+
+      <form id="weatherForm" class="search-box">
+        <input id="locationInput" type="text" placeholder="Enter city or country" />
+        <input id="apiKeyInput" type="password" placeholder="Visual Crossing API key" />
+        <button type="submit">Search</button>
+        <button id="refreshButton" type="button">Refresh</button>
+        <button id="geoButton" type="button">My location</button>
+      </form>
+
+      <p id="status" class="status"></p>
+
+      <section id="currentWeather" class="current-weather" hidden>
+        <div class="weather-art">
+          <div class="sun"></div>
+          <div class="cloud cloud-one"></div>
+          <div class="cloud cloud-two"></div>
+          <div class="rain">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+
+        <div class="weather-info">
+          <p id="resolvedAddress"></p>
+          <h2 id="conditionText"></h2>
+          <p id="summaryText"></p>
+        </div>
+
+        <div class="details">
+          <div>
+            <p>Temperature</p>
+            <strong id="temperature"></strong>
+          </div>
+          <div>
+            <p>Wind speed</p>
+            <strong id="windSpeed"></strong>
+          </div>
+          <div>
+            <p>Rain chance</p>
+            <strong id="rainChance"></strong>
+          </div>
+          <div>
+            <p>Updated</p>
+            <strong id="updatedAt"></strong>
+          </div>
+        </div>
+      </section>
+
+      <section id="hourlySection" class="hourly-section" hidden>
+        <h2>Hourly weather</h2>
+
+        <div class="tabs">
+          <button id="pastTab" class="is-active" type="button">Previous 24h</button>
+          <button id="futureTab" type="button">Future 24h</button>
+        </div>
+
+        <div id="hourGrid" class="hour-grid"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
